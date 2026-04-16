@@ -44,7 +44,8 @@ if __name__ == "__main__":
     # Compression settings
     jpeg_quality = 80  # Adjust quality (1-100)
     resize_dimensions = (
-        800, 800  # Resize images to 800x800 for mobile suitability
+        800,
+        800,  # Resize images to 800x800 for mobile suitability
     )
 
     for input_directory in input_directories:
