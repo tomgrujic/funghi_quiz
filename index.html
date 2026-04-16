@@ -4,10 +4,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World</title>
+    <title>Funghi Quiz</title>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .mushroom-photo {
+            width: 100%;
+            max-height: 420px;
+            object-fit: cover;
+        }
+
+        .answer-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .answer-button {
+            min-height: 110px;
+            padding: 1.25rem;
+            border: 2px solid #d7e8db;
+            border-radius: 1rem;
+            background: #f7fbf8;
+            color: #173c2b;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+        }
+
+        .answer-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            border-color: #7aa98a;
+            box-shadow: 0 0.75rem 1.5rem rgba(36, 79, 55, 0.12);
+        }
+
+        .answer-button:disabled {
+            cursor: default;
+            opacity: 1;
+        }
+
+        .answer-button.correct {
+            border-color: #198754;
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .answer-button.incorrect {
+            border-color: #dc3545;
+            background: #f8d7da;
+            color: #842029;
+        }
+
+        @media (max-width: 576px) {
+            .answer-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 
 <body class="bg-light">
@@ -19,17 +73,20 @@
                 <div class="card shadow-lg border-0 rounded-4">
                     <div class="card-body text-center p-5">
 
-                        <h1 class="display-4 fw-bold text-primary mb-3">
-                            Hello World 👋
+                        <h1 class="display-4 fw-bold text-success mb-3">
+                            Funghi Quiz
                         </h1>
 
                         <p class="lead text-muted mb-4">
-                            Welcome to your GitHub Pages site!
+                            Can you identify this mushroom?
                         </p>
 
-                        <a href="#" class="btn btn-primary btn-lg px-4">
-                            Get Started
-                        </a>
+                        <div id="mushroom-image-container" class="mt-4"></div>
+                        <div id="quiz-feedback" class="fw-semibold mt-4" aria-live="polite"></div>
+                        <div id="answer-grid" class="answer-grid mt-4"></div>
+                        <button id="next-button" type="button" class="btn btn-success btn-lg px-4 mt-4">
+                            Next mushroom
+                        </button>
 
                     </div>
                 </div>
@@ -37,6 +94,445 @@
             </div>
         </div>
     </div>
+
+    <script>
+        const speciesAliases = {
+            "agaricus crocodillinus": "Agaricus crocodilinus",
+            "entolona sinuatum": "Entoloma sinuatum",
+            "trcholoma equestre": "Tricholoma equestre",
+            "xerocomus dryophylus": "Xerocomus dryophilus",
+            "russula vesca": "Russula vesca"
+        };
+
+        const mushroomImages = [
+            "compressed_images/Agaricus arvensis 1.JPG",
+            "compressed_images/Agaricus arvensis 2.jpg",
+            "compressed_images/Agaricus bitorquis 1.jpg",
+            "compressed_images/Agaricus bitorquis 2.jpg",
+            "compressed_images/Agaricus bitorquis 3.jpg",
+            "compressed_images/Agaricus bitorquis 4.jpg",
+            "compressed_images/Agaricus bresadolanus 2.jpg",
+            "compressed_images/Agaricus bresadolanus.JPG",
+            "compressed_images/Agaricus campestris 1.jpg",
+            "compressed_images/Agaricus campestris 2.jpg",
+            "compressed_images/Agaricus crocodilinus 1.jpg",
+            "compressed_images/Agaricus crocodilinus 2.jpg",
+            "compressed_images/Agaricus crocodilinus 8.jpg",
+            "compressed_images/Agaricus crocodillinus 3.jpg",
+            "compressed_images/Agaricus crocodillinus 4.jpg",
+            "compressed_images/Agaricus crocodillinus 5.JPG",
+            "compressed_images/Agaricus crocodillinus 6.jpg",
+            "compressed_images/Agaricus crocodillinus 7.jpg",
+            "compressed_images/Agaricus xanthodermus 1.JPG",
+            "compressed_images/Agaricus xanthodermus 2.jpg",
+            "compressed_images/Amanita caesarea 1.jpg",
+            "compressed_images/Amanita caesarea 2.jpg",
+            "compressed_images/Amanita caesarea ovulo 3.JPG",
+            "compressed_images/Amanita muscaria 1.JPG",
+            "compressed_images/Amanita muscaria 2.JPG",
+            "compressed_images/Amanita pantherina 1.jpg",
+            "compressed_images/Amanita pantherina 2.jpg",
+            "compressed_images/Amanita phalloides 1.jpg",
+            "compressed_images/Amanita phalloides 2.JPG",
+            "compressed_images/Amanita phalloides 3.JPG",
+            "compressed_images/Amanita phalloides 4.jpg",
+            "compressed_images/Amanita phalloides 5.jpg",
+            "compressed_images/Amanita phalloides var. alba 1.JPG",
+            "compressed_images/Amanita phalloides var. alba 2.jpg",
+            "compressed_images/Amanita phalloides var. alba 3.jpg",
+            "compressed_images/Amanita phalloides var. alba 4.jpg",
+            "compressed_images/Amanita phalloides var. alba 5.jpg",
+            "compressed_images/Amanita verna 1.jpg",
+            "compressed_images/Amanita verna 2.jpg",
+            "compressed_images/Amanita verna 3.jpg",
+            "compressed_images/Amanita verna 4.jpg",
+            "compressed_images/Amanita verna 5.JPG",
+            "compressed_images/Amanita virosa 1.jpg",
+            "compressed_images/Amanita virosa 2.jpg",
+            "compressed_images/Amanita virosa 3.jpg",
+            "compressed_images/Amanita virosa 4.jpg",
+            "compressed_images/Armillaria mellea 1.JPG",
+            "compressed_images/Armillaria mellea 2.JPG",
+            "compressed_images/Armillaria mellea 3.JPG",
+            "compressed_images/Armillaria mellea 4.jpg",
+            "compressed_images/Auricularia auricola-judae 1.JPG",
+            "compressed_images/Auricularia auricola-judae 2.JPG",
+            "compressed_images/Auricularia auricola-judae 3.JPG",
+            "compressed_images/Boletus aereus 1.jpg",
+            "compressed_images/Boletus aereus 2.jpg",
+            "compressed_images/Boletus aestivalis 1.jpg",
+            "compressed_images/Boletus aestivalis 2.jpg",
+            "compressed_images/Boletus aestivalis 3.jpg",
+            "compressed_images/Boletus aestivalis 4.jpg",
+            "compressed_images/Boletus edulis 1.jpg",
+            "compressed_images/Boletus edulis 10.jpg",
+            "compressed_images/Boletus edulis 11.jpg",
+            "compressed_images/Boletus edulis 12.jpg",
+            "compressed_images/Boletus edulis 13.jpg",
+            "compressed_images/Boletus edulis 2.jpg",
+            "compressed_images/Boletus edulis 3.JPG",
+            "compressed_images/Boletus edulis 4.jpg",
+            "compressed_images/Boletus edulis 5.jpg",
+            "compressed_images/Boletus edulis 6.JPG",
+            "compressed_images/Boletus edulis 7.jpg",
+            "compressed_images/Boletus edulis 8.JPG",
+            "compressed_images/Boletus edulis 9.jpg",
+            "compressed_images/Boletus pinophilus 1.jpg",
+            "compressed_images/Boletus pinophilus 2.jpg",
+            "compressed_images/Boletus pinophilus 3.jpg",
+            "compressed_images/Boletus pinophilus 4.jpg",
+            "compressed_images/Boletus pinophilus 5.jpg",
+            "compressed_images/Boletus pinophilus 6.jpg",
+            "compressed_images/Buthyriboletus regius 1.jpg",
+            "compressed_images/Buthyriboletus regius 2.jpg",
+            "compressed_images/Buthyriboletus regius 3.jpg",
+            "compressed_images/Calocybe gambosa 1.JPG",
+            "compressed_images/Calocybe gambosa 2.JPG",
+            "compressed_images/Calocybe gambosa 3.png",
+            "compressed_images/Calocybe gambosa 4.png",
+            "compressed_images/Calocybe gambosa 5.JPG",
+            "compressed_images/Cantharellus cibarius 1.jpg",
+            "compressed_images/Cantharellus cibarius 2.jpg",
+            "compressed_images/Cantharellus lutescens 1.jpg",
+            "compressed_images/Cantharellus lutescens 2.jpg",
+            "compressed_images/Cantharellus lutescens 3.jpg",
+            "compressed_images/Clitocybe dealbata 1.jpg",
+            "compressed_images/Clitocybe dealbata 2.jpg",
+            "compressed_images/Cortinarius orellanus 1.jpg",
+            "compressed_images/Cortinarius orellanus 2.jpg",
+            "compressed_images/Cortinarius orellanus 3.jpg",
+            "compressed_images/Cortinarius orellanus 4.jpg",
+            "compressed_images/Cortinarius orellanus 5.jpg",
+            "compressed_images/Cortinarius speciosissimus 1.jpg",
+            "compressed_images/Cortinarius speciosissimus 2.jpg",
+            "compressed_images/Cortinarius speciosissimus 3.jpg",
+            "compressed_images/Craterellus cornucopioides 1.png",
+            "compressed_images/Craterellus cornucopioides 2.jpg",
+            "compressed_images/Cuphophyllus pratensis 1.png",
+            "compressed_images/Cuphophyllus pratensis 2.png",
+            "compressed_images/Cyclocybe aegerita 1.JPG",
+            "compressed_images/Cyclocybe aegerita 2.JPG",
+            "compressed_images/Cyclocybe aegerita 3.jpg",
+            "compressed_images/Cyclocybe aegerita 4.jpg",
+            "compressed_images/Entoloma sinuatum 1.jpg",
+            "compressed_images/Entoloma sinuatum 2.jpg",
+            "compressed_images/Entoloma sinuatum 3.jpg",
+            "compressed_images/Entoloma sinuatum 4.jpg",
+            "compressed_images/Entolona sinuatum 5.jpg",
+            "compressed_images/Galerina marginata 1.jpg",
+            "compressed_images/Gyromitra esculenta 1.jpg",
+            "compressed_images/Hebeloma sinapizans 1.jpg",
+            "compressed_images/Hebeloma sinapizans 2.jpg",
+            "compressed_images/Hemileccinum impolitum 1.jpg",
+            "compressed_images/Hemileccinum impolitum 2.JPG",
+            "compressed_images/Hemileccinum impolitum 3.JPG",
+            "compressed_images/Hydnum albidum 1.JPG",
+            "compressed_images/Hydnum albidum 2.jpg",
+            "compressed_images/Hydnum repandum 2.jpg",
+            "compressed_images/Hydnum rufescens 1.jpg",
+            "compressed_images/Hygrophorus penarioides 1.jpg",
+            "compressed_images/Hygrophorus penarioides 2.jpg",
+            "compressed_images/Hygrophorus russula 1.jpg",
+            "compressed_images/Hygrophorus russula 2.jpg",
+            "compressed_images/Hypholoma fasciculare 1.JPG",
+            "compressed_images/Hypholoma fasciculare 2.jpg",
+            "compressed_images/Hypholoma fasciculare 3.jpg",
+            "compressed_images/Hypholoma lateritium 1.png",
+            "compressed_images/Hypholoma lateritium 2.jpg",
+            "compressed_images/Infundibulicybe geotropa 1.jpg",
+            "compressed_images/Inocybe fastigiata 1.jpg",
+            "compressed_images/Inocybe fastigiata 10.jpg",
+            "compressed_images/Inocybe fastigiata 2.png",
+            "compressed_images/Inocybe fastigiata 3.jpg",
+            "compressed_images/Inocybe fastigiata 4.JPG",
+            "compressed_images/Inocybe fastigiata 5.jpg",
+            "compressed_images/Inocybe fastigiata 6.JPG",
+            "compressed_images/Inocybe fastigiata 7.JPG",
+            "compressed_images/Inocybe fastigiata 8.jpg",
+            "compressed_images/Inocybe fastigiata 9.jpg",
+            "compressed_images/Lactarius deliciosus 1.jpg",
+            "compressed_images/Lactarius deliciosus 2.jpg",
+            "compressed_images/Lactarius piperatus 1.jpg",
+            "compressed_images/Lactarius piperatus 2.jpg",
+            "compressed_images/Lactarius sanguifluus 1.JPG",
+            "compressed_images/Lactarius sanguifluus 2.JPG",
+            "compressed_images/Lactarius sanguifluus 3.JPG",
+            "compressed_images/Lactarius sanguifluus 4.jpg",
+            "compressed_images/Lactarius sanguifluus 5.jpg",
+            "compressed_images/Leccinellum crocipodium 1.JPG",
+            "compressed_images/Leccinellum crocipodium 2.JPG",
+            "compressed_images/Leccinellum crocipodium 3.JPG",
+            "compressed_images/Leccinum aurantiacum 1.jpg",
+            "compressed_images/Leccinum duriusculum 1.png",
+            "compressed_images/Leccinum quercinum 1.jpg",
+            "compressed_images/Leccinum quercinum 2.jpg",
+            "compressed_images/Lepiota brunneoincarnata 1.jpg",
+            "compressed_images/Lepiota brunneoincarnata 2.jpg",
+            "compressed_images/Lepiota cristata 1.jpg",
+            "compressed_images/Lepiota cristata 2.jpg",
+            "compressed_images/Lepiota helveola 1.jpg",
+            "compressed_images/Lepiota helveola 2.jpg",
+            "compressed_images/Lepiota subincarnata 1.jpg",
+            "compressed_images/Lepiota subincarnata 2.jpg",
+            "compressed_images/Lepiota subincarnata 3.jpg",
+            "compressed_images/Macrolepiota mastoidea 1.jpg",
+            "compressed_images/Macrolepiota mastoidea 2.jpg",
+            "compressed_images/Macrolepiota procera 1.JPG",
+            "compressed_images/Macrolepiota procera 2.jpg",
+            "compressed_images/Macrolepiota procera 3.jpg",
+            "compressed_images/Macrolepiota procera 4.jpg",
+            "compressed_images/Marasmius oreades 1.JPG",
+            "compressed_images/Marasmius oreades 2.jpg",
+            "compressed_images/Morchella conica 1.JPG",
+            "compressed_images/Morchella conica 2.JPG",
+            "compressed_images/Morchella conica 3.JPG",
+            "compressed_images/Morchella conica 4.jpg",
+            "compressed_images/Morchella esculenta 1.jpg",
+            "compressed_images/Mycena pura 1.png",
+            "compressed_images/Mycena pura 2.jpg",
+            "compressed_images/Mycena pura 3.jpg",
+            "compressed_images/Omphalotus olearius 1.JPG",
+            "compressed_images/Omphalotus olearius 2.JPG",
+            "compressed_images/Omphalotus olearius 3.JPG",
+            "compressed_images/Omphalotus olearius 4.JPG",
+            "compressed_images/Omphalotus olearius 5.jpg",
+            "compressed_images/Paxillus involutus 1.png",
+            "compressed_images/Paxillus involutus 2.jpg",
+            "compressed_images/Paxillus involutus 3.jpg",
+            "compressed_images/Pleurotus ostreatus 1.JPG",
+            "compressed_images/Ramaria formosa 10610.JPG",
+            "compressed_images/Ramaria formosa.jpg",
+            "compressed_images/Rubroboletus lupinus 1.jpg",
+            "compressed_images/Rubroboletus lupinus 2.JPG",
+            "compressed_images/Rubroboletus lupinus 3.jpg",
+            "compressed_images/Rubroboletus satanas 1.JPG",
+            "compressed_images/Rubroboletus satanas 2.jpg",
+            "compressed_images/Rubroboletus satanas 3.jpg",
+            "compressed_images/Rubroboletus satanas 4.jpg",
+            "compressed_images/Russula aurea 1.JPG",
+            "compressed_images/Russula aurea 2.jpg",
+            "compressed_images/Russula cyanoxantha 1.JPG",
+            "compressed_images/Russula cyanoxantha 2.JPG",
+            "compressed_images/Russula delica 1.JPG",
+            "compressed_images/Russula delica 2.JPG",
+            "compressed_images/Russula heterophylla 1.JPG",
+            "compressed_images/Russula heterophylla 2.JPG",
+            "compressed_images/Russula luteotacta 2.jpg",
+            "compressed_images/Russula luteotacta 2714.JPG",
+            "compressed_images/Russula torulosa 1.JPG",
+            "compressed_images/Russula torulosa 2.JPG",
+            "compressed_images/Russula vesca 1.JPG",
+            "compressed_images/Russula vesca 2.jpg",
+            "compressed_images/Russula vesca 3.jpg",
+            "compressed_images/Russula virescens 1.jpg",
+            "compressed_images/Russula virescens 2.png",
+            "compressed_images/Suillus granulatus 1.jpg",
+            "compressed_images/Suillus granulatus 2.jpg",
+            "compressed_images/Suillus granulatus 3.jpg",
+            "compressed_images/Suillus granulatus 4.jpg",
+            "compressed_images/Suillus granulatus 5.jpg",
+            "compressed_images/Suillus luteus 1.jpg",
+            "compressed_images/Suillus luteus 2.jpg",
+            "compressed_images/Trcholoma equestre 1.jpg",
+            "compressed_images/Tricholoma acerbum 1.jpg",
+            "compressed_images/Tricholoma acerbum 2.jpg",
+            "compressed_images/Tricholoma acerbum 3.jpg",
+            "compressed_images/Tricholoma bresadolanum 1.jpg",
+            "compressed_images/Tricholoma bresadolanum 2.jpg",
+            "compressed_images/Tricholoma bresadolanum 3.JPG",
+            "compressed_images/Tricholoma equestre 2.jpg",
+            "compressed_images/Tricholoma equestre 3.jpg",
+            "compressed_images/Tricholoma equestre 4.jpg",
+            "compressed_images/Tricholoma equestre 5.jpg",
+            "compressed_images/Tricholoma equestre 6.jpg",
+            "compressed_images/Tricholoma equestre 7.jpg",
+            "compressed_images/Tricholoma pardinum 1.jpg",
+            "compressed_images/Tricholoma pardinum 2.jpg",
+            "compressed_images/Tricholoma pardinum 3.jpg",
+            "compressed_images/Tricholoma pardinum 4.jpg",
+            "compressed_images/Tricholoma pardinum 5.jpg",
+            "compressed_images/Tricholoma sulphureum 1.png",
+            "compressed_images/Tricholoma sulphureum 2.jpg",
+            "compressed_images/Tricholoma terreum 1.JPG",
+            "compressed_images/Tricholoma terreum 2.JPG",
+            "compressed_images/Tricholoma terreum 3.jpg",
+            "compressed_images/Xerocomus dryophilus 1.JPG",
+            "compressed_images/Xerocomus dryophylus 2.JPG",
+            "compressed_images/Xerocomus subtomentosus 1.jpg",
+            "compressed_images/russula vesca 4.jpg"
+        ];
+
+        const mushroomSpecies = [
+            "Agaricus arvensis",
+            "Agaricus bitorquis",
+            "Agaricus bresadolanus",
+            "Agaricus campestris",
+            "Agaricus crocodilinus",
+            "Agaricus xanthodermus",
+            "Amanita caesarea",
+            "Amanita caesarea ovulo",
+            "Amanita muscaria",
+            "Amanita pantherina",
+            "Amanita phalloides",
+            "Amanita phalloides var. alba",
+            "Amanita verna",
+            "Amanita virosa",
+            "Armillaria mellea",
+            "Auricularia auricola-judae",
+            "Boletus aereus",
+            "Boletus aestivalis",
+            "Boletus edulis",
+            "Boletus pinophilus",
+            "Buthyriboletus regius",
+            "Calocybe gambosa",
+            "Cantharellus cibarius",
+            "Cantharellus lutescens",
+            "Clitocybe dealbata",
+            "Cortinarius orellanus",
+            "Cortinarius speciosissimus",
+            "Craterellus cornucopioides",
+            "Cuphophyllus pratensis",
+            "Cyclocybe aegerita",
+            "Entoloma sinuatum",
+            "Galerina marginata",
+            "Gyromitra esculenta",
+            "Hebeloma sinapizans",
+            "Hemileccinum impolitum",
+            "Hydnum albidum",
+            "Hydnum repandum",
+            "Hydnum rufescens",
+            "Hygrophorus penarioides",
+            "Hygrophorus russula",
+            "Hypholoma fasciculare",
+            "Hypholoma lateritium",
+            "Infundibulicybe geotropa",
+            "Inocybe fastigiata",
+            "Lactarius deliciosus",
+            "Lactarius piperatus",
+            "Lactarius sanguifluus",
+            "Leccinellum crocipodium",
+            "Leccinum aurantiacum",
+            "Leccinum duriusculum",
+            "Leccinum quercinum",
+            "Lepiota brunneoincarnata",
+            "Lepiota cristata",
+            "Lepiota helveola",
+            "Lepiota subincarnata",
+            "Macrolepiota mastoidea",
+            "Macrolepiota procera",
+            "Marasmius oreades",
+            "Morchella conica",
+            "Morchella esculenta",
+            "Mycena pura",
+            "Omphalotus olearius",
+            "Paxillus involutus",
+            "Pleurotus ostreatus",
+            "Ramaria formosa",
+            "Rubroboletus lupinus",
+            "Rubroboletus satanas",
+            "Russula aurea",
+            "Russula cyanoxantha",
+            "Russula delica",
+            "Russula heterophylla",
+            "Russula luteotacta",
+            "Russula torulosa",
+            "Russula vesca",
+            "Russula virescens",
+            "Suillus granulatus",
+            "Suillus luteus",
+            "Tricholoma equestre",
+            "Tricholoma acerbum",
+            "Tricholoma bresadolanum",
+            "Tricholoma pardinum",
+            "Tricholoma sulphureum",
+            "Tricholoma terreum",
+            "Xerocomus dryophilus",
+            "Xerocomus subtomentosus"
+        ];
+
+        function extractSpeciesName(imagePath) {
+            const filename = imagePath.split("/").pop() || "";
+            const nameWithoutExtension = filename.replace(/\.(jpg|jpeg|png)$/i, "");
+            const rawSpeciesName = nameWithoutExtension.replace(/\s+\d+$/, "").trim();
+            const normalizedKey = rawSpeciesName.toLowerCase();
+
+            return speciesAliases[normalizedKey] || rawSpeciesName;
+        }
+
+        function shuffle(items) {
+            const copy = [...items];
+
+            for (let index = copy.length - 1; index > 0; index -= 1) {
+                const randomIndex = Math.floor(Math.random() * (index + 1));
+                [copy[index], copy[randomIndex]] = [copy[randomIndex], copy[index]];
+            }
+
+            return copy;
+        }
+
+        function buildChoices(correctAnswer) {
+            const distractors = shuffle(
+                mushroomSpecies.filter((species) => species !== correctAnswer)
+            ).slice(0, 3);
+
+            return shuffle([correctAnswer, ...distractors]);
+        }
+
+        function renderQuizRound() {
+            const imageContainer = document.getElementById("mushroom-image-container");
+            const answerGrid = document.getElementById("answer-grid");
+            const feedback = document.getElementById("quiz-feedback");
+            const randomImage = mushroomImages[Math.floor(Math.random() * mushroomImages.length)];
+            const correctAnswer = extractSpeciesName(randomImage);
+            const choices = buildChoices(correctAnswer);
+
+            feedback.className = "fw-semibold mt-4";
+            feedback.textContent = "Choose the mushroom name.";
+
+            imageContainer.innerHTML = `
+                <img
+                    src="${randomImage}"
+                    alt="Mushroom to identify"
+                    class="mushroom-photo img-fluid rounded-4 shadow-sm"
+                >
+            `;
+
+            answerGrid.innerHTML = "";
+
+            choices.forEach((choice) => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "answer-button shadow-sm";
+                button.textContent = choice;
+
+                button.addEventListener("click", () => {
+                    const buttons = answerGrid.querySelectorAll("button");
+                    const isCorrect = choice === correctAnswer;
+
+                    buttons.forEach((answerButton) => {
+                        answerButton.disabled = true;
+
+                        if (answerButton.textContent === correctAnswer) {
+                            answerButton.classList.add("correct");
+                        } else if (answerButton === button && !isCorrect) {
+                            answerButton.classList.add("incorrect");
+                        }
+                    });
+
+                    feedback.className = `fw-semibold mt-4 ${isCorrect ? "text-success" : "text-danger"}`;
+                    feedback.textContent = isCorrect
+                        ? "Correct! Nice one."
+                        : `Not quite. The correct answer was ${correctAnswer}.`;
+                });
+
+                answerGrid.appendChild(button);
+            });
+        }
+
+        document.getElementById("next-button").addEventListener("click", renderQuizRound);
+
+        renderQuizRound();
+    </script>
 
     <!-- Bootstrap JS (optional) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
